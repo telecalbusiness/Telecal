@@ -1,0 +1,26 @@
+{
+  "name": "telecal",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/server && concurrently \"npm run dev --workspace=apps/server\" \"npm run dev --workspace=apps/client\"",
+    "build": "npm run build --workspace=packages/shared && npm run build --workspace=apps/server && npm run build --workspace=apps/client",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:migrate": "npm run db:migrate --workspace=apps/server",
+    "db:generate": "npm run db:generate --workspace=apps/server",
+    "db:studio": "npm run db:studio --workspace=apps/server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
