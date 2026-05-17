@@ -15,6 +15,8 @@ import { auditService } from '../audit/audit.service';
 import { storageService } from '../../lib/storage';
 import { notificationService } from '../notifications/notifications.service';
 import { emailService } from '../../lib/email';
+import { earningsService } from '../earnings/earnings.service';
+import { payoutsService } from '../payouts/payouts.service';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireAdmin);
@@ -675,3 +677,113 @@ adminRouter.post(
   },
 );
 
+// ─── Earnings management ──────────────────────────────────────
+
+// GET /admin/earnings — list all earnings across all doctors
+adminRouter.get(
+  '/earnings',
+  validateQuery(paginationSchema.extend({ doctorProfileId: z.string().uuid().optional() })),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { page, pageSize, doctorProfileId } = req.query as unknown as {
+        page: number; pageSize: number; doctorProfileId?: string;
+      };
+      const result = await earningsService.listAllEarnings(page, pageSize, doctorProfileId);
+      sendSuccess(res, result);
+    } catch (err) { next(err); }
+  },
+);
+
+// GET /admin/earnings/commission — get current commission settings
+adminRouter.get(
+  '/earnings/commission',
+  async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const settings = await earningsService.getCommissionSettings();
+      sendSuccess(res, settings);
+    } catch (err) { next(err); }
+  },
+);
+
+// PATCH /admin/earnings/commission — update commission split
+adminRouter.patch(
+  '/earnings/commission',
+  validateBody(z.object({
+    doctorPercent: z.number().int().min(1).max(99),
+  })),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { doctorPercent } = req.body as { doctorPercent: number };
+      const result = await earningsService.updateCommissionSettings(doctorPercent, req.user!.id);
+      sendSuccess(res, result, 'Commission settings updated');
+    } catch (err) { next(err); }
+  },
+);
+
+// POST /admin/earnings/:earningId/reverse — reverse a credited earning
+adminRouter.post(
+  '/earnings/:earningId/reverse',
+  validateParams(z.object({ earningId: z.string().uuid() })),
+  validateBody(z.object({ reason: z.string().min(10, 'Please provide a reason') })),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await earningsService.reverseEarning(
+        req.params['earningId']!,
+        req.user!.id,
+        req.body.reason as string,
+      );
+      sendSuccess(res, null, 'Earning reversed successfully');
+    } catch (err) { next(err); }
+  },
+);
+
+// ─── Payouts management ───────────────────────────────────────
+
+// GET /admin/payouts — list all payouts
+adminRouter.get(
+  '/payouts',
+  validateQuery(paginationSchema.extend({ doctorProfileId: z.string().uuid().optional() })),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { page, pageSize, doctorProfileId } = req.query as unknown as {
+        page: number; pageSize: number; doctorProfileId?: string;
+      };
+      const result = await payoutsService.listPayouts(page, pageSize, doctorProfileId);
+      sendSuccess(res, result);
+    } catch (err) { next(err); }
+  },
+);
+
+// GET /admin/payouts/doctors/:doctorProfileId/summary — doctor payout summary
+adminRouter.get(
+  '/payouts/doctors/:doctorProfileId/summary',
+  validateParams(z.object({ doctorProfileId: z.string().uuid() })),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const summary = await payoutsService.getDoctorPayoutSummary(req.params['doctorProfileId']!);
+      sendSuccess(res, summary);
+    } catch (err) { next(err); }
+  },
+);
+
+// POST /admin/payouts/doctors/:doctorProfileId/pay — initiate payout to a doctor
+adminRouter.post(
+  '/payouts/doctors/:doctorProfileId/pay',
+  validateParams(z.object({ doctorProfileId: z.string().uuid() })),
+  validateBody(z.object({
+    periodStart: z.string().datetime({ message: 'periodStart must be an ISO date string' }),
+    periodEnd: z.string().datetime({ message: 'periodEnd must be an ISO date string' }),
+  })),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { periodStart, periodEnd } = req.body as { periodStart: string; periodEnd: string };
+      const result = await payoutsService.initiatePayout(
+        req.params['doctorProfileId']!,
+        req.user!.id,
+        new Date(periodStart),
+        new Date(periodEnd),
+      );
+      sendSuccess(res, result, 'Payout initiated successfully');
+    } catch (err) { next(err); }
+  },
+);

@@ -137,3 +137,36 @@ prescriptionsRouter.get(
   },
 );
 
+/// Doctor: get prescriptions they have issued
+prescriptionsRouter.get(
+  '/issued',
+  requireDoctor,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const doctor = await prisma.doctorProfile.findUnique({
+        where: { userId: req.user!.id },
+      });
+      if (!doctor) throw new NotFoundError('Doctor profile');
+
+      const prescriptions = await prisma.prescription.findMany({
+        where: { doctorId: doctor.id },
+        include: {
+          appointment: {
+            select: {
+              consultationType: true,
+              patient: {
+                select: {
+                  fileNumber: true,
+                  user: { select: { firstName: true, lastName: true } },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      sendSuccess(res, prescriptions);
+    } catch (err) { next(err); }
+  },
+);

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Search, FileText, Bell,
   LogOut, Sun, Moon, Menu, X, Settings, Shield,
   Stethoscope, ClipboardList, Users, UserCircle,
-  Wallet,
+  Wallet, TrendingUp, Banknote,
 } from 'lucide-react';import { cn } from '@/utils';
 import { useAuth, useAppDispatch } from '@/hooks/useAppDispatch';
 import { useDarkMode } from '@/hooks/useDarkMode';
@@ -30,6 +30,7 @@ const doctorNav = [
   { to: '/dashboard/appointments', icon: Calendar, label: 'Appointments' },
   { to: '/dashboard/investigations', icon: ClipboardList, label: 'Investigations' },
   { to: '/dashboard/prescriptions', icon: FileText, label: 'Prescriptions' },
+  { to: '/dashboard/earnings', icon: TrendingUp, label: 'Earnings' },
   { to: '/dashboard/credentials', icon: Shield, label: 'Credentials' },
   { to: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
   { to: '/dashboard/profile', icon: UserCircle, label: 'Profile' },
@@ -40,6 +41,8 @@ const adminNav = [
   { to: '/dashboard/doctors', icon: Stethoscope, label: 'Doctors' },
   { to: '/dashboard/patients', icon: Users, label: 'Patients' },
   { to: '/dashboard/appointments', icon: Calendar, label: 'Appointments' },
+  { to: '/dashboard/earnings', icon: TrendingUp, label: 'Earnings' },
+  { to: '/dashboard/payouts', icon: Banknote, label: 'Payouts' },
   { to: '/dashboard/audit', icon: Shield, label: 'Audit Logs' },
   { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ];

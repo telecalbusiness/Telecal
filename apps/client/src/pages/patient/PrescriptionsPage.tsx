@@ -23,9 +23,9 @@ export const PrescriptionsPage: React.FC = () => {
   const isDoctor = user?.role === UserRole.DOCTOR;
 
   const { data, isLoading } = useQuery({
-    queryKey: ['prescriptions'],
+    queryKey: ['prescriptions', isDoctor],
     queryFn: () =>
-      apiGet<Prescription[]>(isDoctor ? '/prescriptions/mine' : '/prescriptions/mine'),
+      apiGet<Prescription[]>(isDoctor ? '/prescriptions/issued' : '/prescriptions/mine'),
     staleTime: 30_000,
   });
 

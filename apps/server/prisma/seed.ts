@@ -51,6 +51,8 @@ async function main() {
     { key: 'MAINTENANCE_MODE', value: 'false' },
     { key: 'MAX_PATIENTS_PER_DOCTOR', value: '5' },
     { key: 'SESSION_WARNING_SECONDS', value: '120' },
+    { key: 'DOCTOR_COMMISSION_PERCENT', value: '75' },
+    { key: 'PLATFORM_COMMISSION_PERCENT', value: '25' },
   ];
 
   for (const cfg of configs) {

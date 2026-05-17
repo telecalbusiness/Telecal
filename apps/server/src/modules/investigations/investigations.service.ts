@@ -117,6 +117,38 @@ export const addReportFile = async (
   return file;
 };
 
+// ─── Patient: get own investigations ─────────────────────────
+
+export const getPatientInvestigations = async (
+  patientUserId: string,
+  page = 1,
+  pageSize = 20,
+) => {
+  const patient = await prisma.patientProfile.findUnique({ where: { userId: patientUserId } });
+  if (!patient) throw new NotFoundError('Patient profile');
+
+  const where = { patientId: patient.id, deletedAt: null };
+  const [items, total] = await Promise.all([
+    prisma.investigation.findMany({
+      where,
+      include: {
+        files: { select: { id: true, fileName: true, fileType: true, uploadedAt: true } },
+        doctor: {
+          select: {
+            user: { select: { firstName: true, lastName: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.investigation.count({ where }),
+  ]);
+
+  return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+};
+
 // ─── Doctor: get assigned investigations ──────────────────────
 
 export const getDoctorInvestigations = async (
@@ -236,6 +268,7 @@ export const getInvestigationById = async (
 export const investigationsService = {
   createInvestigation,
   addReportFile,
+  getPatientInvestigations,
   getDoctorInvestigations,
   submitReview,
   getInvestigationById,

@@ -7,6 +7,7 @@ import { validateBody } from '../../middleware/validate';
 import { uploadRateLimit } from '../../middleware/rateLimiter';
 import { uploadInvestigationFiles, handleMulterError } from '../../middleware/upload';
 import { storageService } from '../../lib/storage';
+import { UserRole } from '@mediconnect/shared';
 
 export const investigationsRouter = Router();
 investigationsRouter.use(requireAuth);
@@ -27,7 +28,30 @@ investigationsRouter.post(
   },
 );
 
-// Patient/Doctor/Admin: get investigation
+// Patient or Doctor: list investigations (role-aware)
+investigationsRouter.get(
+  '/',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page = Number(req.query['page']) || 1;
+      const pageSize = Number(req.query['pageSize']) || 20;
+
+      if (req.user!.role === UserRole.DOCTOR) {
+        const data = await investigationsService.getDoctorInvestigations(
+          req.user!.id, page, pageSize,
+        );
+        sendSuccess(res, data);
+      } else {
+        const data = await investigationsService.getPatientInvestigations(
+          req.user!.id, page, pageSize,
+        );
+        sendSuccess(res, data);
+      }
+    } catch (err) { next(err); }
+  },
+);
+
+// Patient/Doctor/Admin: get investigation by id
 investigationsRouter.get(
   '/:id',
   async (req: Request, res: Response, next: NextFunction) => {
@@ -36,22 +60,6 @@ investigationsRouter.get(
         req.params['id']!,
         req.user!.id,
         req.user!.role,
-      );
-      sendSuccess(res, data);
-    } catch (err) { next(err); }
-  },
-);
-
-// Doctor: list assigned investigations
-investigationsRouter.get(
-  '/',
-  requireDoctor,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const page = Number(req.query['page']) || 1;
-      const pageSize = Number(req.query['pageSize']) || 20;
-      const data = await investigationsService.getDoctorInvestigations(
-        req.user!.id, page, pageSize,
       );
       sendSuccess(res, data);
     } catch (err) { next(err); }

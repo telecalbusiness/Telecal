@@ -18,7 +18,7 @@ interface WalletData {
   updatedAt: string;
   transactions: Array<{
     id: string;
-    type: 'TOPUP' | 'DEBIT' | 'REFUND';
+    type: 'TOPUP' | 'DEBIT' | 'REFUND' | 'EARNINGS_CREDIT' | 'PAYOUT';
     amountKobo: number;
     balanceAfter: number;
     description: string;
@@ -148,11 +148,11 @@ export const WalletPage: React.FC = () => {
               >
                 <div className={cn(
                   'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
-                  tx.type === 'TOPUP' || tx.type === 'REFUND'
+                  tx.type === 'TOPUP' || tx.type === 'REFUND' || tx.type === 'EARNINGS_CREDIT'
                     ? 'bg-green-100 dark:bg-green-900/20'
                     : 'bg-red-100 dark:bg-red-900/20',
                 )}>
-                  {tx.type === 'TOPUP' || tx.type === 'REFUND' ? (
+                  {tx.type === 'TOPUP' || tx.type === 'REFUND' || tx.type === 'EARNINGS_CREDIT' ? (
                     <ArrowDownLeft size={16} className="text-green-600 dark:text-green-400" />
                   ) : (
                     <ArrowUpRight size={16} className="text-red-600 dark:text-red-400" />
@@ -169,11 +169,11 @@ export const WalletPage: React.FC = () => {
                 </div>
                 <p className={cn(
                   'font-display font-semibold flex-shrink-0',
-                  tx.type === 'TOPUP' || tx.type === 'REFUND'
+                  tx.type === 'TOPUP' || tx.type === 'REFUND' || tx.type === 'EARNINGS_CREDIT'
                     ? 'text-green-600 dark:text-green-400'
                     : 'text-red-600 dark:text-red-400',
                 )}>
-                  {tx.type === 'DEBIT' ? '-' : '+'}{formatCurrency(tx.amountKobo)}
+                  {tx.type === 'DEBIT' || tx.type === 'PAYOUT' ? '-' : '+'}{formatCurrency(tx.amountKobo)}
                 </p>
               </div>
             ))}

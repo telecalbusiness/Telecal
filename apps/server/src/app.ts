@@ -33,6 +33,8 @@ import { prescriptionsRouter } from './modules/prescriptions/prescriptions.route
 import { notificationsRouter } from './modules/notifications/notifications.routes';
 import { adminRouter } from './modules/admin/admin.routes';
 import { walletRouter } from './modules/wallet/wallet.routes';
+import { earningsRouter } from './modules/earnings/earnings.routes';
+import { payoutsRouter } from './modules/payouts/payouts.routes';
 
 export const createApp = () => {
   const app = express();
@@ -146,6 +148,8 @@ export const createApp = () => {
   app.use(`${apiPrefix}/notifications`, notificationsRouter);
   app.use(`${apiPrefix}/admin`, adminRouter);
   app.use(`${apiPrefix}/wallet`, walletRouter);
+  app.use(`${apiPrefix}/earnings`, earningsRouter);
+  app.use(`${apiPrefix}/payouts`, payoutsRouter);
 
   // ── 13. 404 handler ───────────────────────────────────────────
   app.use((_req: Request, res: Response) => {

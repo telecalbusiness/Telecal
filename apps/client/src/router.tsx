@@ -36,6 +36,7 @@ import { NotificationsPage } from '@/pages/patient/NotificationsPage';
 // Doctor pages
 import { DoctorDashboard } from '@/pages/doctor/DoctorDashboard';
 import { DoctorCredentialsPage } from '@/pages/doctor/DoctorCredentialsPage';
+import { DoctorEarningsPage } from '@/pages/doctor/DoctorEarningsPage';
 
 // Admin pages
 import { AdminDashboard } from '@/pages/admin/AdminDashboard';
@@ -46,6 +47,8 @@ import { AdminAuditLogsPage } from '@/pages/admin/AdminAuditLogsPage';
 import { AdminAppointmentsPage } from '@/pages/admin/AdminAppointmentsPage';
 import { AdminSettingsPage } from '@/pages/admin/AdminSettingsPage';
 import { AdminPatientDetailPage } from '@/pages/admin/AdminPatientDetailPage';
+import { AdminEarningsPage } from '@/pages/admin/AdminEarningsPage';
+import { AdminPayoutsPage } from '@/pages/admin/AdminPayoutsPage';
 
 // Shared pages
 import { ProfilePage } from '@/pages/ProfilePage';
@@ -61,6 +64,14 @@ const AppointmentsRouteHandler: React.FC = () => {
   const { user } = useAuth();
   if (user?.role === UserRole.ADMIN) return <AdminAppointmentsPage />;
   return <AppointmentsListPage />;
+};
+
+// ─── Earnings route — renders admin or doctor view by role ────
+
+const EarningsRouteHandler: React.FC = () => {
+  const { user } = useAuth();
+  if (user?.role === UserRole.ADMIN) return <AdminEarningsPage />;
+  return <DoctorEarningsPage />;
 };
 
 // ─── Page loader ──────────────────────────────────────────────
@@ -238,6 +249,18 @@ export const AppRouter: React.FC = () => (
           <Route path="credentials" element={
             <ProtectedRoute allowedRoles={[UserRole.DOCTOR]}>
               <DoctorCredentialsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="earnings" element={
+            <ProtectedRoute allowedRoles={[UserRole.DOCTOR, UserRole.ADMIN]}>
+              <EarningsRouteHandler />
+            </ProtectedRoute>
+          } />
+
+          {/* ── Admin routes ───────────────────────────── */}
+          <Route path="payouts" element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminPayoutsPage />
             </ProtectedRoute>
           } />
 

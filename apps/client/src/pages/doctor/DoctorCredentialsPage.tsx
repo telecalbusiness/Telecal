@@ -15,6 +15,10 @@ interface Credential {
   uploadedAt: string;
 }
 
+interface DoctorProfile {
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED';
+}
+
 export const DoctorCredentialsPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [dragOver, setDragOver] = useState(false);
@@ -26,6 +30,16 @@ export const DoctorCredentialsPage: React.FC = () => {
     queryFn: () => apiGet<Credential[]>('/doctors/me/credentials'),
     staleTime: 30_000,
   });
+
+  // Fetch doctor status — uses the lightweight /me/status endpoint
+  const { data: doctorProfile } = useQuery({
+    queryKey: ['doctor-profile-status'],
+    queryFn: () => apiGet<DoctorProfile>('/doctors/me/status'),
+    staleTime: 60_000,
+  });
+
+  const isVerified = doctorProfile?.status === 'VERIFIED';
+  const isRejected = doctorProfile?.status === 'REJECTED';
 
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files) return;
@@ -92,21 +106,51 @@ export const DoctorCredentialsPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Status banner */}
-      <Card className="mb-5 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/10" padding="md">
-        <div className="flex items-start gap-3">
-          <Clock size={18} className="text-yellow-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-400">
-              Pending verification
-            </p>
-            <p className="text-xs text-yellow-700/80 dark:text-yellow-500/80 mt-0.5 leading-relaxed">
-              Upload your medical license, specialty certificate, and any supporting documents.
-              Our admin team will review them within 24–48 hours and notify you by email.
-            </p>
+      {/* Status banner — only show when not yet verified */}
+      {isVerified ? (
+        <Card className="mb-5 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10" padding="md">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 size={18} className="text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-green-800 dark:text-green-400">
+                Account verified
+              </p>
+              <p className="text-xs text-green-700/80 dark:text-green-500/80 mt-0.5 leading-relaxed">
+                Your credentials have been reviewed and approved by our admin team.
+              </p>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      ) : isRejected ? (
+        <Card className="mb-5 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10" padding="md">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-800 dark:text-red-400">
+                Verification rejected
+              </p>
+              <p className="text-xs text-red-700/80 dark:text-red-500/80 mt-0.5 leading-relaxed">
+                Your credentials were not approved. Please upload updated documents and contact support.
+              </p>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <Card className="mb-5 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/10" padding="md">
+          <div className="flex items-start gap-3">
+            <Clock size={18} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-400">
+                Pending verification
+              </p>
+              <p className="text-xs text-yellow-700/80 dark:text-yellow-500/80 mt-0.5 leading-relaxed">
+                Upload your medical license, specialty certificate, and any supporting documents.
+                Our admin team will review them within 24–48 hours and notify you by email.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Drop zone */}
       <Card padding="none" className="mb-4 overflow-hidden">

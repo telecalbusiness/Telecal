@@ -101,9 +101,20 @@ doctorsRouter.get('/me/dashboard', async (req: Request, res: Response, next: Nex
   } catch (err) { next(err); }
 });
 
+// GET /doctors/me/status — lightweight status check (used by credentials page)
+doctorsRouter.get('/me/status', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const doctor = await prisma.doctorProfile.findUnique({
+      where: { userId: req.user!.id },
+      select: { status: true },
+    });
+    if (!doctor) throw new NotFoundError('Doctor profile');
+    sendSuccess(res, { status: doctor.status });
+  } catch (err) { next(err); }
+});
+
 // PATCH /doctors/me/profile — update bio, availability schedule
-doctorsRouter.patch(
-  '/me/profile',
+doctorsRouter.patch(  '/me/profile',
   validateBody(z.object({
     bio: z.string().max(1000).optional(),
     specialization: z.string().max(100).optional(),

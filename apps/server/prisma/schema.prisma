@@ -111,6 +111,8 @@ enum NotificationType {
   DOCTOR_APPROVED
   DOCTOR_REJECTED
   EMERGENCY_TRIAGE
+  EARNINGS_CREDITED
+  PAYOUT_PROCESSED
 }
 
 enum TriagePriority {
@@ -137,6 +139,10 @@ enum AuditAction {
   DOCTOR_SUSPENDED
   PAYMENT_REFUNDED
   PATIENT_ASSIGNED
+  EARNINGS_CREDITED
+  PAYOUT_INITIATED
+  PAYOUT_COMPLETED
+  PAYOUT_FAILED
 }
 
 //User 
@@ -289,6 +295,9 @@ model DoctorProfile {
   prescriptions Prescription[]
   ratings      DoctorRating[]
   adminReviews DoctorAdminReview[]
+  earnings     DoctorEarning[]
+  bankAccount  DoctorBankAccount?
+  payouts      DoctorPayout[]
 
   @@index([discipline, status, presence])
   @@index([status])
@@ -396,6 +405,7 @@ model Appointment {
   payment      Payment?       @relation("AppointmentPayment")
   prescription Prescription?
   investigation Investigation?
+  earning      DoctorEarning?
 
   @@index([patientId, createdAt(sort: Desc)])
   @@index([doctorId, createdAt(sort: Desc)])
@@ -564,9 +574,11 @@ model SystemConfig {
 // ─── Wallet ───────────────────────────────────────────────────
 
 enum WalletTransactionType {
-  TOPUP         // Patient deposited money
-  DEBIT         // Payment for consultation or investigation
-  REFUND        // Admin-issued refund
+  TOPUP            // Patient deposited money
+  DEBIT            // Payment for consultation or investigation
+  REFUND           // Admin-issued refund
+  EARNINGS_CREDIT  // Doctor earnings credited after completed appointment
+  PAYOUT           // Doctor payout withdrawn to bank account
 }
 
 model Wallet {
@@ -600,4 +612,92 @@ model WalletTransaction {
 
   @@index([walletId, createdAt(sort: Desc)])
   @@map("wallet_transactions")
+}
+
+// ─── Doctor Earnings ──────────────────────────────────────────
+// Tracks what each doctor is owed after each completed appointment.
+// Status: PENDING → credited to doctor wallet immediately on COMPLETED.
+
+enum EarningStatus {
+  PENDING   // Appointment completed, earnings calculated but not yet credited
+  CREDITED  // Credited to doctor's in-app wallet
+  REVERSED  // Admin reversed the earning (dispute/refund)
+}
+
+model DoctorEarning {
+  id              String        @id @default(uuid())
+  doctorProfileId String
+  appointmentId   String        @unique
+  grossAmountKobo Int           // Total amount patient paid
+  doctorShareKobo Int           // Doctor's cut (e.g. 75%)
+  platformShareKobo Int         // Platform's cut (e.g. 25%)
+  commissionPercent Int         // Snapshot of doctor % at time of appointment
+  status          EarningStatus @default(PENDING)
+  creditedAt      DateTime?
+  reversedAt      DateTime?
+  reversedBy      String?       // Admin userId who reversed it
+  reverseReason   String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  doctor      DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  appointment Appointment   @relation(fields: [appointmentId], references: [id])
+
+  @@index([doctorProfileId, createdAt(sort: Desc)])
+  @@index([doctorProfileId, status])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("doctor_earnings")
+}
+
+// ─── Doctor Bank Account ──────────────────────────────────────
+// Stored securely for payout via Paystack Transfer API.
+// One active bank account per doctor at a time.
+
+model DoctorBankAccount {
+  id              String   @id @default(uuid())
+  doctorProfileId String   @unique
+  bankCode        String   // Paystack bank code (e.g. "058" for GTBank)
+  bankName        String   // Human-readable bank name
+  accountNumber   String   // Bank account number
+  accountName     String   // Verified account name from Paystack
+  paystackRecipientCode String? // Paystack transfer recipient code
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  doctor DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+
+  @@map("doctor_bank_accounts")
+}
+
+// ─── Doctor Payout ────────────────────────────────────────────
+// Records each payout batch sent to a doctor.
+
+enum PayoutStatus {
+  PENDING    // Admin initiated, not yet sent
+  PROCESSING // Sent to Paystack, awaiting confirmation
+  COMPLETED  // Paystack confirmed transfer
+  FAILED     // Transfer failed
+}
+
+model DoctorPayout {
+  id                  String       @id @default(uuid())
+  doctorProfileId     String
+  initiatedBy         String       // Admin userId
+  amountKobo          Int          // Total amount paid out
+  paystackReference   String?      @unique
+  paystackTransferId  String?
+  status              PayoutStatus @default(PENDING)
+  failureReason       String?
+  periodStart         DateTime     // Earnings period covered
+  periodEnd           DateTime
+  completedAt         DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  doctor DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([doctorProfileId, createdAt(sort: Desc)])
+  @@index([status])
+  @@map("doctor_payouts")
 }

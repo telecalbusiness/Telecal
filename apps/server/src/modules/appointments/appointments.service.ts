@@ -293,10 +293,12 @@ export const completeAppointment = async (
 
   if (!appointment) throw new NotFoundError('Appointment');
 
+  const finalStatus = endedNaturally ? 'COMPLETED' : 'TIMED_OUT';
+
   await prisma.appointment.update({
     where: { id: appointmentId },
     data: {
-      status: endedNaturally ? 'COMPLETED' : 'TIMED_OUT',
+      status: finalStatus,
       sessionEndedAt: new Date(),
     },
   });
@@ -306,7 +308,18 @@ export const completeAppointment = async (
     await assignmentEngine.releaseDoctor(appointment.doctorId);
   }
 
-  logger.info('Appointment completed', { appointmentId, endedNaturally });
+  // Credit doctor earnings only for naturally completed appointments.
+  // TIMED_OUT appointments still earn — the doctor showed up and worked.
+  // Only skip if the appointment was CANCELLED or NO_SHOW.
+  if (appointment.doctorId) {
+    const { creditDoctorEarnings } = await import('../earnings/earnings.service');
+    // Non-blocking — earnings failure must never crash the session end flow
+    creditDoctorEarnings(appointmentId).catch((err) => {
+      logger.error('Failed to credit doctor earnings', { appointmentId, err });
+    });
+  }
+
+  logger.info('Appointment completed', { appointmentId, endedNaturally, finalStatus });
 };
 
 export const appointmentsService = {

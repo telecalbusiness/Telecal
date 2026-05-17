@@ -8,6 +8,14 @@ export const FEES = {
   INVESTIGATION_RETURNING_KOBO: 150_000,    // ₦1,500 — discounted follow-up
 } as const;
 
+// Commission Split
+// These are defaults — actual values are stored in SystemConfig
+// and can be changed by admin without a code deploy.
+export const COMMISSION = {
+  DOCTOR_PERCENT_DEFAULT: 75,   // Doctor receives 75% of consultation fee
+  PLATFORM_PERCENT_DEFAULT: 25, // Platform receives 25%
+} as const;
+
 // Session Time Limits 
 export const SESSION_LIMITS = {
   GENERAL_PRACTICE_MINUTES: 20,
