@@ -75,8 +75,9 @@ export enum PaymentStatus {
 
 export enum PaymentPurpose {
   CONSULTATION = 'CONSULTATION',
-  INVESTIGATION_NEW = 'INVESTIGATION_NEW',        // First-time investigation
-  INVESTIGATION_RETURNING = 'INVESTIGATION_RETURNING', // Discounted follow-up
+  INVESTIGATION_NEW = 'INVESTIGATION_NEW',
+  INVESTIGATION_RETURNING = 'INVESTIGATION_RETURNING',
+  WALLET_TOPUP = 'WALLET_TOPUP',
 }
 
 export enum SessionRecordingStatus {

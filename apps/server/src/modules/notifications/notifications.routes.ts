@@ -23,17 +23,17 @@ notificationsRouter.get('/unread-count', async (req: Request, res: Response, nex
   } catch (err) { next(err); }
 });
 
-notificationsRouter.patch('/:id/read', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await notificationService.markAsRead(req.params['id']!, req.user!.id);
-    sendSuccess(res, null, 'Notification marked as read');
-  } catch (err) { next(err); }
-});
-
 notificationsRouter.patch('/mark-all-read', async (req: Request, res: Response, next: NextFunction) => {
   try {
     await notificationService.markAllAsRead(req.user!.id);
     sendSuccess(res, null, 'All notifications marked as read');
+  } catch (err) { next(err); }
+});
+
+notificationsRouter.patch('/:id/read', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await notificationService.markAsRead(req.params['id']!, req.user!.id);
+    sendSuccess(res, null, 'Notification marked as read');
   } catch (err) { next(err); }
 });
 

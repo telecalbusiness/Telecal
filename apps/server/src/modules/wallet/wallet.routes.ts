@@ -50,7 +50,7 @@ walletRouter.post(
       await prisma.payment.create({
         data: {
           patientId: patientProfile.id,
-          purpose: 'CONSULTATION',
+          purpose: 'WALLET_TOPUP',
           paystackReference: reference,
           amountKobo,
           currency: 'NGN',
