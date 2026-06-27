@@ -126,7 +126,8 @@ const AvatarUpload: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      const response = await fetch('/api/v1/users/me/avatar', {
+      const apiBase = import.meta.env.VITE_API_URL ?? '';
+      const response = await fetch(`${apiBase}/api/v1/users/me/avatar`, {
         method: 'POST', body: formData, credentials: 'include',
       });
       if (!response.ok) {
