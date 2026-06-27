@@ -36,6 +36,7 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   AWS_S3_BUCKET: z.string().optional(),
+  AWS_S3_ENDPOINT: z.string().optional(),
   AWS_S3_BUCKET_REGION: z.string().optional(),
   LOCAL_STORAGE_PATH: z.string().default('./uploads'),
 
