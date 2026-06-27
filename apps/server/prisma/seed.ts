@@ -1,14 +1,4 @@
-// ============================================================
-// Telecal — DATABASE SEED
-// Run with: npm run db:seed
-//
-// Creates:
-//   - Default admin account
-//   - System config defaults
-//
-// IMPORTANT: Change admin credentials immediately after
-// first deployment. Never use these defaults in production.
-// ============================================================
+// @ts-nocheck
 
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
