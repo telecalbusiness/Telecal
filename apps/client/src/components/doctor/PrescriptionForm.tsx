@@ -36,7 +36,7 @@ export const PrescriptionForm: React.FC<Props> = ({ appointmentId, onSuccess }) 
   const queryClient = useQueryClient();
   const [issuing, setIssuing] = useState(false);
 
-  const { register, handleSubmit, control, watch, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, control, watch, setValue, formState: { errors, isSubmitting } } =
     useForm<FormData>({
       resolver: zodResolver(schema),
       defaultValues: {
