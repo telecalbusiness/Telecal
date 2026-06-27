@@ -19,18 +19,18 @@ import type {
 // ─── Cookie options ───────────────────────────────────────────
 
 const refreshCookieOptions = {
-  httpOnly: true,       // Not accessible via JS — XSS immune
-  secure: isProd,       // HTTPS only in production
-  sameSite: 'strict' as const,
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-  path: '/api/v1/auth', // Scoped to auth routes only
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none' as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: '/api/v1/auth',
 };
 
 const accessCookieOptions = {
   httpOnly: true,
-  secure: isProd,
-  sameSite: 'strict' as const,
-  maxAge: 15 * 60 * 1000, // 15 minutes in ms
+  secure: true,
+  sameSite: 'none' as const,
+  maxAge: 15 * 60 * 1000,
   path: '/',
 };
 
