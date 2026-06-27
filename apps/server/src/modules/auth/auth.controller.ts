@@ -7,7 +7,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service';
 import { sendSuccess, sendCreated } from '../../utils/response';
-import { isProd } from '../../config';
 import type {
   RegisterPatientDto,
   RegisterDoctorDto,
