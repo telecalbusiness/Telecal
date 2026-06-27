@@ -74,16 +74,15 @@ export const createApp = () => {
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, Postman in dev)
-        if (!origin && !isProd) return callback(null, true);
+      if (!origin) return callback(null, true);
 
-        const allowed = [config.CLIENT_URL];
-        if (allowed.includes(origin ?? '')) {
-          callback(null, true);
-        } else {
-          callback(new Error(`CORS: Origin ${origin} not allowed`));
-        }
-      },
+      const allowed = [config.CLIENT_URL];
+      if (allowed.includes(origin ?? '')) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: Origin ${origin} not allowed`));
+      }
+    },
       credentials: true, // Required for httpOnly cookie auth
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: [

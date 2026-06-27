@@ -66,8 +66,6 @@ const saveS3 = async (
     Key: fileKey,
     Body: buffer,
     ContentType: mimeType,
-    ServerSideEncryption: 'aws:kms',
-    ACL: 'private',
     Metadata: {
       originalName: encodeURIComponent(originalName),
     },
