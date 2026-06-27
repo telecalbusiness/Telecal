@@ -151,7 +151,8 @@ usersRouter.post(
       );
 
       // Update user's avatarUrl with the storage key wrapped in our serve path
-      const avatarUrl = `/api/v1/users/avatar/${encodeURIComponent(stored.fileKey)}`;
+      const backendUrl = process.env['BACKEND_URL'] ?? `http://localhost:${process.env['PORT'] ?? 5000}`;
+      const avatarUrl = `${backendUrl}/api/v1/users/avatar/${encodeURIComponent(stored.fileKey)}`;
       await prisma.user.update({
         where: { id: req.user!.id },
         data: { avatarUrl },
