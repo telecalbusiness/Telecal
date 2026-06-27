@@ -2,8 +2,6 @@ import React from 'react';
 import { cn, getInitials, getStatusColor, capitalizeFirst } from '@/utils';
 import { X } from 'lucide-react';
 
-// ─── Card ─────────────────────────────────────────────────────
-
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   glass?: boolean;
   padding?: 'none' | 'sm' | 'md' | 'lg';
@@ -16,8 +14,6 @@ export const Card: React.FC<CardProps> = ({ glass, padding = 'md', children, cla
     {children}
   </div>
 );
-
-// ─── Badge ────────────────────────────────────────────────────
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -40,15 +36,12 @@ export const Badge: React.FC<BadgeProps> = ({ children, variant = 'default', cla
   </span>
 );
 
-// ─── Status badge (reads from status string) ──────────────────
 
 export const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
   <span className={cn('badge', getStatusColor(status))}>
     {capitalizeFirst(status.replace(/_/g, ' '))}
   </span>
 );
-
-// ─── Avatar ───────────────────────────────────────────────────
 
 interface AvatarProps {
   firstName: string;
@@ -92,7 +85,6 @@ export const Avatar: React.FC<AvatarProps> = ({
   );
 };
 
-// ─── Skeleton ─────────────────────────────────────────────────
 
 export const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
   <div className={cn('skeleton', className)} />
@@ -112,7 +104,6 @@ export const SkeletonCard: React.FC = () => (
   </div>
 );
 
-// ─── Modal ────────────────────────────────────────────────────
 
 interface ModalProps {
   isOpen: boolean;
@@ -177,8 +168,6 @@ export const Modal: React.FC<ModalProps> = ({
   );
 };
 
-// ─── Empty state ──────────────────────────────────────────────
-
 interface EmptyStateProps {
   icon?: React.ReactNode;
   title: string;
@@ -198,8 +187,6 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description
     {action && <div className="mt-4">{action}</div>}
   </div>
 );
-
-// ─── Stat card ────────────────────────────────────────────────
 
 interface StatCardProps {
   label: string;
