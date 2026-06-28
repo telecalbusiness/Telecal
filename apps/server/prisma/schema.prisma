@@ -114,6 +114,7 @@ enum NotificationType {
   EMERGENCY_TRIAGE
   EARNINGS_CREDITED
   PAYOUT_PROCESSED
+  SYSTEM_ALERT
 }
 
 enum TriagePriority {

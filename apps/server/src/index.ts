@@ -19,6 +19,7 @@ import {
   handleUnhandledRejection,
 } from './middleware/errorHandler';
 import { initSocketServer } from './lib/websocket/socketServer';
+import { setNotificationIo } from './modules/notifications/notifications.service';
 
 // ─── Process-level error guards ───────────────────────────────
 // Register BEFORE anything else — catch errors during boot
@@ -60,6 +61,7 @@ const boot = async () => {
 
   // 5. Initialize WebSocket handlers
   initSocketServer(io);
+  setNotificationIo(io);
 
   // Make io accessible to route handlers via app.get('io')
   app.set('io', io);

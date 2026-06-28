@@ -5,6 +5,7 @@
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { AppError, NotFoundError } from '../../utils/errors';
+import { notificationService } from '../notifications/notifications.service';
 
 // Get or create wallet for a user
 export const getOrCreateWallet = async (userId: string) => {
@@ -52,6 +53,17 @@ export const creditWallet = async (
         description,
         reference,
       },
+    });
+
+    logger.info('Wallet credited', { userId, amountKobo, reference });
+
+    // Notify user of top-up
+    void notificationService.createNotification({
+      userId,
+      type: 'PAYMENT_CONFIRMED',
+      title: 'Wallet topped up',
+      message: `₦${(amountKobo / 100).toLocaleString()} has been added to your wallet. New balance: ₦${(wallet.balanceKobo / 100).toLocaleString()}`,
+      metadata: { reference, amountKobo },
     });
 
     return wallet;

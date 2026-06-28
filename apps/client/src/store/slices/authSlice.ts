@@ -37,10 +37,15 @@ export const fetchCurrentUser = createAsyncThunk('auth/fetchCurrentUser', async 
 
 export const loginUser = createAsyncThunk(
   'auth/login',
-  async (credentials: { email: string; password: string }) => {
-    await apiPost('/auth/login', credentials);
-    const data = await apiGet<AuthUser>('/users/me');
-    return data;
+  async (credentials: { email: string; password: string }, { rejectWithValue }) => {
+    try {
+      await apiPost('/auth/login', credentials);
+      const data = await apiGet<AuthUser>('/users/me');
+      return data;
+    } catch (err: unknown) {
+      const e = err as { message?: string; code?: string; status?: number };
+      return rejectWithValue(e.message ?? 'Login failed');
+    }
   },
 );
 

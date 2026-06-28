@@ -34,12 +34,12 @@ export const LoginPage: React.FC = () => {
     try {
       const result = await dispatch(loginUser(data)).unwrap();
       toast.success(`Welcome back, ${result.firstName}!`);
-      // Route based on role
       if (result.role === UserRole.ADMIN) navigate('/dashboard');
       else if (result.role === UserRole.DOCTOR) navigate('/dashboard');
       else navigate('/dashboard');
-    } catch {
-      // Error already toasted by API interceptor
+    } catch (err: unknown) {
+      const message = typeof err === 'string' ? err : 'Invalid email or password';
+      toast.error(message);
     }
   };
 

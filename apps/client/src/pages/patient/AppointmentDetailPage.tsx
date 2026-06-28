@@ -8,7 +8,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { apiGet, apiPost } from '@/services/api';
+import { apiGet, apiPost, apiPatch } from '@/services/api';
 import { useAuth } from '@/hooks/useAppDispatch';
 import { Button } from '@/components/common/Button';
 import {
@@ -80,7 +80,7 @@ export const AppointmentDetailPage: React.FC = () => {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: () => apiPost(`/appointments/${id}/cancel`, {}),
+    mutationFn: () => apiPatch(`/appointments/${id}/cancel`),
     onSuccess: () => {
       toast.success('Appointment cancelled');
       setShowCancelModal(false);

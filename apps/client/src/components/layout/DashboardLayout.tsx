@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, Search, FileText, Bell,
@@ -8,9 +8,11 @@ import {
 } from 'lucide-react';import { cn } from '@/utils';
 import { useAuth, useAppDispatch } from '@/hooks/useAppDispatch';
 import { useDarkMode } from '@/hooks/useDarkMode';
+import { useSocket } from '@/hooks/useSocket';
 import { logoutUser } from '@/store/slices/authSlice';
 import { Avatar } from '@/components/common';
 import { UserRole } from '@mediconnect/shared';
+import { apiGet } from '@/services/api';
 
 // ─── Nav config per role ──────────────────────────────────────
 
@@ -61,8 +63,31 @@ const Sidebar: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const navItems = user ? navByRole[user.role] : [];
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Poll unread notification count every 30 seconds
+  // Also refreshed instantly when a socket notification arrives
+  useEffect(() => {
+    if (!user) return;
+    const fetchUnread = async () => {
+      try {
+        const data = await apiGet<{ count: number }>('/notifications/unread-count');
+        setUnreadCount(data.count);
+      } catch { /* silent */ }
+    };
+    void fetchUnread();
+    const interval = setInterval(() => void fetchUnread(), 30_000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const { disconnect } = useSocket(() => {
+    apiGet<{ count: number }>('/notifications/unread-count')
+      .then((data) => setUnreadCount(data.count))
+      .catch(() => { /* silent */ });
+  });
 
   const handleLogout = async () => {
+    disconnect();
     await dispatch(logoutUser());
     navigate('/auth/login');
   };
@@ -115,6 +140,11 @@ const Sidebar: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
           >
             <Icon size={18} />
             {label}
+            {label === 'Notifications' && unreadCount > 0 && (
+              <span className="ml-auto text-xs font-bold bg-brand-600 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

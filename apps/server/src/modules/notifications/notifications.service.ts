@@ -4,6 +4,8 @@
 // real-time events via Socket.io.
 // ============================================================
 
+import { Server as SocketServer } from 'socket.io';
+import { WS_EVENTS } from '@mediconnect/shared';
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 
@@ -15,17 +17,32 @@ interface CreateNotificationInput {
   metadata?: Record<string, string | number | boolean>;
 }
 
+// io is set once at boot time via setIo()
+let _io: SocketServer | null = null;
+
+export const setNotificationIo = (io: SocketServer): void => {
+  _io = io;
+};
+
 const createNotification = async (input: CreateNotificationInput) => {
   try {
     const notification = await prisma.notification.create({
       data: {
         userId: input.userId,
-        type: input.type as never, // Cast — DB enforces enum validity
+        type: input.type as never,
         title: input.title,
         message: input.message,
         metadata: input.metadata !== undefined ? input.metadata : undefined,
       },
     });
+
+    // Push real-time event if socket server is available
+    if (_io) {
+      _io.to(`user:${input.userId}`).emit(WS_EVENTS.NOTIFICATION, {
+        notification,
+      });
+    }
+
     return notification;
   } catch (err) {
     logger.error('Failed to create notification', { input, err });

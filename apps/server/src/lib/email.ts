@@ -380,4 +380,24 @@ export const emailService = {
       `),
     });
   },
+
+  async sendPasswordChanged(opts: { email: string; firstName: string }) {
+    await send({
+      to: opts.email,
+      subject: 'Your Telecal password was changed',
+      html: baseTemplate(`
+        <h1>Password changed</h1>
+        <p>Hello ${opts.firstName},</p>
+        <p>Your Telecal account password was successfully changed.</p>
+        <p>
+          If you made this change, no further action is needed.
+        </p>
+        <p>
+          If you did <strong>not</strong> make this change, please reset your
+          password immediately and contact our support team.
+        </p>
+        <a href="${config.CLIENT_URL}/auth/forgot-password" class="btn">Reset password</a>
+      `),
+    });
+  },
 };

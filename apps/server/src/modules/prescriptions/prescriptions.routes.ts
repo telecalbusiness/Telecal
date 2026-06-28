@@ -6,6 +6,7 @@ import { prisma } from '../../lib/prisma';
 import { NotFoundError } from '../../utils/errors';
 import { z } from 'zod';
 import { emailService } from '../../lib/email';
+import { notificationService } from '../notifications/notifications.service';
 
 export const prescriptionsRouter = Router();
 prescriptionsRouter.use(requireAuth);
@@ -101,6 +102,14 @@ prescriptionsRouter.patch(
         doctorFirstName: doctor.user.firstName,
         appointmentId: prescription.appointmentId,
         medicationCount: meds.length,
+      });
+
+      void notificationService.createNotification({
+        userId: prescription.appointment.patient.userId,
+        type: 'PRESCRIPTION_READY',
+        title: 'Prescription issued',
+        message: `Dr. ${doctor.user.firstName} has issued a prescription for your consultation with ${meds.length} medication${meds.length > 1 ? 's' : ''}.`,
+        metadata: { appointmentId: prescription.appointmentId, prescriptionId: prescription.id },
       });
 
       sendSuccess(res, updated, 'Prescription issued');

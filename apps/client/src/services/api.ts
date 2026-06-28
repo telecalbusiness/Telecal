@@ -1,11 +1,3 @@
-// ============================================================
-// TELECAL — API CLIENT
-// Axios instance with:
-//  - Automatic token refresh on 401
-//  - Consistent error handling
-//  - Request/response logging in dev
-// ============================================================
-
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
 
@@ -77,10 +69,9 @@ api.interceptors.response.use(
     const message = apiError?.error?.message ?? error.message ?? 'An error occurred';
     const code = apiError?.error?.code;
 
-    // Don't toast on 401/403 — handled by redirect or auth state
+    const isLoginEndpoint = originalRequest.url?.includes('/auth/login');
     if (error.response?.status !== 401 && error.response?.status !== 403) {
-      // Only toast server errors that aren't validation errors
-      if (code !== 'VALIDATION_ERROR') {
+      if (code !== 'VALIDATION_ERROR' && !isLoginEndpoint) {
         toast.error(message, { id: `api-error-${code ?? 'unknown'}` });
       }
     }
@@ -88,8 +79,6 @@ api.interceptors.response.use(
     return Promise.reject({ message, code, status: error.response?.status });
   },
 );
-
-// ─── Typed request helpers ────────────────────────────────────
 
 export const apiGet = <T>(url: string, params?: Record<string, unknown>) =>
   api.get<{ success: true; data: T }>(url, { params }).then((r) => r.data.data);

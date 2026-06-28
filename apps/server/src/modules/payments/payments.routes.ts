@@ -15,6 +15,7 @@ import { paymentsService } from './payments.service';
 import { verifyWebhookSignature } from '../../lib/paystack';
 import { sendSuccess } from '../../utils/response';
 import { logger } from '../../lib/logger';
+import { prisma } from '../../lib/prisma';
 
 export const paymentsRouter = Router();
 
@@ -50,7 +51,27 @@ paymentsRouter.post(
   },
 );
 
-// ── Paystack webhook ──────────────────────────────────────────
+// ── Check payment status by reference (used by frontend polling) ─
+paymentsRouter.get(
+  '/status',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const reference = req.query['reference'] as string;
+      if (!reference) {
+        res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'reference is required' } });
+        return;
+      }
+      const payment = await prisma.payment.findUnique({
+        where: { paystackReference: reference },
+        select: { status: true, purpose: true },
+      });
+      sendSuccess(res, { confirmed: payment?.status === 'SUCCESSFUL' });
+    } catch (err) { next(err); }
+  },
+);
+
+
 // IMPORTANT: This route uses raw body (set in app.ts).
 // No auth middleware — Paystack calls this directly.
 // Security is entirely via HMAC signature verification.

@@ -9,6 +9,7 @@ import { assignmentEngine } from '../../lib/queue/assignmentEngine';
 import { auditService } from '../audit/audit.service';
 import { emailService } from '../../lib/email';
 import { logger } from '../../lib/logger';
+import { notificationService } from '../notifications/notifications.service';
 
 // ─── Create investigation request ─────────────────────────────
 
@@ -218,6 +219,14 @@ export const submitReview = async (
       patientEmail: fullInvestigation.patient.user.email,
       patientFirstName: fullInvestigation.patient.user.firstName,
       investigationId,
+    });
+
+    void notificationService.createNotification({
+      userId: fullInvestigation.patient.userId,
+      type: 'INVESTIGATION_REVIEWED',
+      title: 'Investigation reviewed',
+      message: 'Your investigation report has been reviewed by your doctor. Check your investigations page for the full review notes.',
+      metadata: { investigationId },
     });
   }
 

@@ -13,6 +13,8 @@ import { NotFoundError } from '../../utils/errors';
 import bcrypt from 'bcryptjs';
 import { AUTH } from '@mediconnect/shared';
 import { auditService } from '../audit/audit.service';
+import { emailService } from '../../lib/email';
+import { notificationService } from '../notifications/notifications.service';
 
 import { uploadRateLimit } from '../../middleware/rateLimiter';
 import { storageService } from '../../lib/storage';
@@ -231,6 +233,24 @@ usersRouter.patch(
         userId: req.user!.id,
         action: 'PASSWORD_CHANGED',
       });
+
+      // Notify user by email and in-app
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: { email: true, firstName: true },
+      });
+      if (updatedUser) {
+        void emailService.sendPasswordChanged({
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+        });
+        void notificationService.createNotification({
+          userId: req.user!.id,
+          type: 'SYSTEM_ALERT',
+          title: 'Password changed',
+          message: 'Your password was changed successfully. If you did not do this, contact support immediately.',
+        });
+      }
 
       sendSuccess(res, null, 'Password changed. Please log in again.');
     } catch (err) { next(err); }

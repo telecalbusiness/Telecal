@@ -24,6 +24,7 @@ import { NotFoundError, AppError } from '../../utils/errors';
 import { assignmentEngine } from '../../lib/queue/assignmentEngine';
 import { auditService } from '../audit/audit.service';
 import { emailService } from '../../lib/email';
+import { notificationService } from '../notifications/notifications.service';
 
 // ─── Initialize payment for an appointment ────────────────────
 
@@ -232,7 +233,7 @@ export const handleVerifiedWebhook = async (
   // Send payment confirmation email (non-blocking)
   const patient = await prisma.patientProfile.findUnique({
     where: { id: payment.patientId },
-    include: { user: { select: { email: true, firstName: true } } },
+    include: { user: { select: { id: true, email: true, firstName: true } } },
   });
   if (patient) {
     void emailService.sendPaymentConfirmed({
@@ -241,6 +242,15 @@ export const handleVerifiedWebhook = async (
       amountNGN: (paidAmountKobo / 100).toFixed(0),
       reference,
       purpose: payment.purpose.replace(/_/g, ' ').toLowerCase(),
+    });
+
+    // In-app notification
+    void notificationService.createNotification({
+      userId: patient.user.id,
+      type: 'PAYMENT_CONFIRMED',
+      title: 'Payment confirmed',
+      message: `Your payment of ₦${(paidAmountKobo / 100).toLocaleString()} has been confirmed. Reference: ${reference}`,
+      metadata: { reference, amountKobo: paidAmountKobo },
     });
   }
 
