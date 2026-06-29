@@ -11,6 +11,8 @@ export const PaymentSuccessPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const reference = searchParams.get('reference') ?? searchParams.get('trxref');
+  const type = searchParams.get('type');
+  const redirectPath = type === 'wallet' ? '/dashboard/wallet' : '/dashboard/appointments';
   const [status, setStatus] = useState<'waiting' | 'confirmed' | 'timeout'>('waiting');
   const [dots, setDots] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -38,7 +40,7 @@ export const PaymentSuccessPage: React.FC = () => {
           clearInterval(pollRef.current!);
           clearInterval(dotRef.current!);
           // Navigate after 2s so user sees the confirmed state
-          setTimeout(() => navigate('/dashboard/appointments'), 2000);
+          setTimeout(() => navigate(redirectPath), 2000);
           return;
         }
       } catch {
@@ -50,7 +52,7 @@ export const PaymentSuccessPage: React.FC = () => {
         clearInterval(pollRef.current!);
         clearInterval(dotRef.current!);
         // Navigate anyway after timeout — appointment will update when webhook fires
-        setTimeout(() => navigate('/dashboard/appointments'), 3000);
+        setTimeout(() => navigate(redirectPath), 3000);
       }
     }, 2000);
 
@@ -95,9 +97,9 @@ export const PaymentSuccessPage: React.FC = () => {
 
         <Button
           className="w-full"
-          onClick={() => navigate('/dashboard/appointments')}
+          onClick={() => navigate(redirectPath)}
         >
-          Go to appointments
+          {type === 'wallet' ? 'Go to wallet' : 'Go to appointments'}
         </Button>
       </Card>
     </div>

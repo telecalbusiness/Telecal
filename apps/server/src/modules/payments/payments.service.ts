@@ -1,16 +1,3 @@
-// ============================================================
-// TELECAL — PAYMENTS SERVICE
-//
-// Payment flow:
-//  1. Client calls POST /payments/initialize
-//     → Creates/updates payment record, returns Paystack URL
-//  2. Patient pays on Paystack-hosted page
-//  3. Paystack fires webhook to POST /payments/webhook
-//  4. We verify signature + amount, update payment status
-//  5. If CONSULTATION payment: trigger assignment engine
-//  6. If INVESTIGATION payment: unlock report upload
-// ============================================================
-
 import { FEES } from '@mediconnect/shared';
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
@@ -19,6 +6,7 @@ import {
   verifyTransaction,
   validatePaymentAmount,
 } from '../../lib/paystack';
+import { config } from '../../config';
 import { encrypt } from '../../utils/encryption';
 import { NotFoundError, AppError } from '../../utils/errors';
 import { assignmentEngine } from '../../lib/queue/assignmentEngine';
@@ -57,6 +45,7 @@ export const initializeAppointmentPayment = async (
     email: appointment.patient.user.email,
     amountKobo: appointment.payment.amountKobo,
     reference: appointment.payment.paystackReference,
+    callbackUrl: `${config.CLIENT_URL}/payment/success?reference=${appointment.payment.paystackReference}`,
     metadata: {
       appointmentId: appointment.id,
       purpose: 'CONSULTATION',
@@ -127,6 +116,7 @@ export const initializeInvestigationPayment = async (
     email: investigation.patient.user.email,
     amountKobo,
     reference: investigation.payment?.paystackReference ?? reference,
+    callbackUrl: `${config.CLIENT_URL}/payment/success?reference=${investigation.payment?.paystackReference ?? reference}&type=investigation`,
     metadata: { investigationId, purpose: 'INVESTIGATION' },
   });
 

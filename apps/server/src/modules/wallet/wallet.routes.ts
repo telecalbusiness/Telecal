@@ -7,6 +7,7 @@ import { prisma } from '../../lib/prisma';
 import { NotFoundError } from '../../utils/errors';
 import { z } from 'zod';
 import { validateBody } from '../../middleware/validate';
+import { config } from '../../config';
 
 export const walletRouter = Router();
 walletRouter.use(requireAuth);
@@ -62,6 +63,7 @@ walletRouter.post(
         email: user.email,
         amountKobo,
         reference,
+        callbackUrl: `${config.CLIENT_URL}/payment/success?reference=${reference}&type=wallet`,
         metadata: {
           purpose: 'WALLET_TOPUP',
           userId: req.user!.id,
