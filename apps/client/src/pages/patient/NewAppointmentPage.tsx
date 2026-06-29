@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Stethoscope, Microscope, AlertTriangle, ChevronRight, CreditCard, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/common/Button';
 import { Select, Textarea } from '@/components/common/Input';
 import { apiPost } from '@/services/api';
@@ -30,6 +31,7 @@ type FormData = z.infer<typeof schema>;
 
 export const NewAppointmentPage: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const initialType = searchParams.get('type') as ConsultationType | null;
 
@@ -66,7 +68,9 @@ export const NewAppointmentPage: React.FC = () => {
       }>('/appointments', { ...data, useWallet: paymentMethod === 'wallet' });
 
       if (paymentMethod === 'wallet') {
-        // Wallet payment succeeded immediately — go to appointment
+        // Invalidate cache so appointment detail shows fresh data
+        await queryClient.invalidateQueries({ queryKey: ['appointments'] });
+        await queryClient.invalidateQueries({ queryKey: ['wallet'] });
         toast.success('Consultation booked! A doctor will be assigned shortly.');
         navigate(`/dashboard/appointments/${result.data.appointment.id}`);
       } else {

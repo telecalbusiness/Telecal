@@ -106,8 +106,9 @@ export const VideoCallPage: React.FC = () => {
         // Start recording
         startRecording(stream);
 
-        // Connect WebSocket
-        const socket = io({ withCredentials: true });
+        // Connect WebSocket — must point to backend explicitly in production
+        const socketUrl = import.meta.env.VITE_API_URL ?? '';
+        const socket = io(socketUrl, { withCredentials: true });
         socketRef.current = socket;
 
         socket.emit('appointment:join', { appointmentId });

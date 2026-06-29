@@ -5,6 +5,7 @@
 import {
   ConsultationType,
   FEES,
+  SESSION_LIMITS,
 } from '@mediconnect/shared';
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
@@ -47,7 +48,7 @@ export const createAppointment = async (
         priority: dto.priority,
         notes: dto.notes ?? null,
         status: 'PAYMENT_CONFIRMED', // Skip payment step
-        sessionDurationMinutes: 0,
+        sessionDurationMinutes: dto.consultationType === ConsultationType.GENERAL_PRACTICE ? SESSION_LIMITS.GENERAL_PRACTICE_MINUTES : SESSION_LIMITS.SPECIALIST_MINUTES,
       },
     });
 
@@ -97,7 +98,7 @@ const createAppointmentWithPaystack = async (
         priority: dto.priority,
         notes: dto.notes ?? null,
         status: 'PENDING_PAYMENT',
-        sessionDurationMinutes: 0,
+        sessionDurationMinutes: dto.consultationType === ConsultationType.GENERAL_PRACTICE ? SESSION_LIMITS.GENERAL_PRACTICE_MINUTES : SESSION_LIMITS.SPECIALIST_MINUTES,
       },
     });
 
