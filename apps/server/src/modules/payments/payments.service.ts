@@ -1,4 +1,18 @@
+// ============================================================
+// TELECAL — PAYMENTS SERVICE
+//
+// Payment flow:
+//  1. Client calls POST /payments/initialize
+//     → Creates/updates payment record, returns Paystack URL
+//  2. Patient pays on Paystack-hosted page
+//  3. Paystack fires webhook to POST /payments/webhook
+//  4. We verify signature + amount, update payment status
+//  5. If CONSULTATION payment: trigger assignment engine
+//  6. If INVESTIGATION payment: unlock report upload
+// ============================================================
+
 import { FEES } from '@mediconnect/shared';
+import { config } from '../../config';
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import {
@@ -6,7 +20,6 @@ import {
   verifyTransaction,
   validatePaymentAmount,
 } from '../../lib/paystack';
-import { config } from '../../config';
 import { encrypt } from '../../utils/encryption';
 import { NotFoundError, AppError } from '../../utils/errors';
 import { assignmentEngine } from '../../lib/queue/assignmentEngine';
@@ -187,7 +200,7 @@ export const handleVerifiedWebhook = async (
   // Encrypt the raw gateway response before storing
   const gatewayResponseEncrypted = encrypt(JSON.stringify(data));
 
-  // Update payment status atomically
+  // Update payment status atomically — including wallet credit if this is a top-up
   await prisma.$transaction(async (tx) => {
     await tx.payment.update({
       where: { id: payment.id },
@@ -212,6 +225,37 @@ export const handleVerifiedWebhook = async (
         data: { status: 'PAYMENT_CONFIRMED' },
       });
     }
+
+    // Credit wallet immediately inside transaction for top-ups
+    if (payment.purpose === 'WALLET_TOPUP') {
+      const patientProfile = await tx.patientProfile.findUnique({
+        where: { id: payment.patientId },
+        select: { userId: true },
+      });
+      if (patientProfile) {
+        const wallet = await tx.wallet.findUnique({
+          where: { userId: patientProfile.userId },
+        });
+        if (!wallet) throw new Error('Wallet not found');
+        if (wallet.balanceKobo < 0) throw new Error('Invalid wallet state');
+
+        const newBalance = wallet.balanceKobo + paidAmountKobo;
+        await tx.wallet.update({
+          where: { userId: patientProfile.userId },
+          data: { balanceKobo: newBalance },
+        });
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'TOPUP',
+            amountKobo: paidAmountKobo,
+            balanceAfter: newBalance,
+            description: 'Wallet top-up via Paystack',
+            reference,
+          },
+        });
+      }
+    }
   });
 
   logger.info('Payment confirmed', {
@@ -220,7 +264,7 @@ export const handleVerifiedWebhook = async (
     amountKobo: paidAmountKobo,
   });
 
-  // Send payment confirmation email (non-blocking)
+  // Send payment confirmation email and notification (non-blocking)
   const patient = await prisma.patientProfile.findUnique({
     where: { id: payment.patientId },
     include: { user: { select: { id: true, email: true, firstName: true } } },
@@ -234,32 +278,15 @@ export const handleVerifiedWebhook = async (
       purpose: payment.purpose.replace(/_/g, ' ').toLowerCase(),
     });
 
-    // In-app notification
     void notificationService.createNotification({
       userId: patient.user.id,
       type: 'PAYMENT_CONFIRMED',
-      title: 'Payment confirmed',
-      message: `Your payment of ₦${(paidAmountKobo / 100).toLocaleString()} has been confirmed. Reference: ${reference}`,
+      title: payment.purpose === 'WALLET_TOPUP' ? 'Wallet topped up' : 'Payment confirmed',
+      message: payment.purpose === 'WALLET_TOPUP'
+        ? `₦${(paidAmountKobo / 100).toLocaleString()} has been added to your wallet.`
+        : `Your payment of ₦${(paidAmountKobo / 100).toLocaleString()} has been confirmed. Reference: ${reference}`,
       metadata: { reference, amountKobo: paidAmountKobo },
     });
-  }
-
-  // Trigger assignment engine for consultations
-  // Check if this was a wallet top-up
-  const metadata = data['metadata'] as Record<string, string> | undefined;
-  if (metadata?.['purpose'] === 'WALLET_TOPUP' && metadata?.['userId']) {
-    const { creditWallet } = await import('../wallet/wallet.service');
-    await creditWallet(
-      metadata['userId'],
-      paidAmountKobo,
-      reference,
-      'Wallet top-up via Paystack',
-    );
-    logger.info('Wallet credited via webhook', {
-      userId: metadata['userId'],
-      amountKobo: paidAmountKobo,
-    });
-    return;
   }
 
   // Trigger assignment engine for consultations
